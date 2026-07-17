@@ -103,7 +103,7 @@ fun SettingsCard(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertizontally
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
