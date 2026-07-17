@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">BrainRot</string>
+    <string name="accessibility_service_description">Tracks your Reel swipes to help you stay mindful of your digital wellbeing.</string>
+</resources>
