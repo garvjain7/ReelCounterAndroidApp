@@ -8,20 +8,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.SdStorage
+import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.brainrot.ui.theme.Flame
 
 @Composable
 fun WelcomeScreen() {
@@ -40,30 +42,31 @@ fun WelcomeScreen() {
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(Flame),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Notifications,
+                imageVector = Icons.Rounded.PlayCircle,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = Color.White
             )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Welcome to BrainRot",
+            text = "Know Your ReelRot",
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Track your Reel and Short consumption to stay mindful of your digital habits.",
+            text = "See exactly how many Reels and Shorts you watch — before it gets out of hand.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -72,17 +75,17 @@ fun WelcomeScreen() {
         Spacer(modifier = Modifier.height(48.dp))
 
         PermissionInfoItem(
-            icon = Icons.Default.Settings,
-            title = "Accessibility Permission",
-            description = "We use this to detect when you swipe. We never collect personal data."
+            icon = Icons.Rounded.TouchApp,
+            title = "Swipe Detection",
+            description = "Counts every reel you scroll past. We never read your content or collect any data."
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         PermissionInfoItem(
-            icon = Icons.Default.Warning,
-            title = "Privacy Focused",
-            description = "All data stays on your phone. No cloud, no tracking."
+            icon = Icons.Rounded.SdStorage,
+            title = "100% On-Device",
+            description = "Everything stays on your phone. No accounts, no cloud, no tracking."
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -92,15 +95,16 @@ fun WelcomeScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Flame)
         ) {
-            Text("Enable Tracking", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Enable Tracking", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "Settings > Accessibility > BrainRot",
+            text = "Settings → Accessibility → ReelRot",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -120,7 +124,7 @@ fun PermissionInfoItem(icon: ImageVector, title: String, description: String) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = Flame,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -128,7 +132,8 @@ fun PermissionInfoItem(icon: ImageVector, title: String, description: String) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = description,

@@ -1,4 +1,4 @@
-# Technical Documentation — BrainRot Architecture
+# Technical Documentation — ReelRot Architecture
 
 ## 1. Architecture Overview
 The project follows a modular Android architecture utilizing Jetpack Compose for UI, Room for persistence, and Kotlin Coroutines for asynchronous operations. The core logic resides in a background `AccessibilityService`.
@@ -24,7 +24,7 @@ The `ReelDao` provides reactive `Flow` outputs for "Today's Count" and "Total Co
 
 ## 4. Overlay Service
 `ReelOverlayService` uses the `WindowManager` to draw a custom `ComposeView` over other applications. 
-- **Island UI**: A "Dynamic Island" inspired UI composed of three segments: Instagram count, Total "BrainRot" (💀), and YouTube count.
+- **Island UI**: A "Dynamic Island" inspired UI composed of three segments: Instagram count, Total "ReelRot" (💀), and YouTube count.
 - **Lifecycle Management**: Implements `LifecycleOwner` and `SavedStateRegistryOwner` to allow Jetpack Compose to run reliably inside a background `Service`.
 
 ## 5. Session Management
@@ -35,4 +35,4 @@ The `ReelDao` provides reactive `Flow` outputs for "Today's Count" and "Total Co
 
 ## 6. Notable Implementation Details
 - **Performance**: Accessibility events are filtered by package name before being passed to detectors to minimize CPU overhead.
-- **UI/UX**: Uses a custom theme (`BrainRotTheme`) with high-contrast colors (Pink for IG, Red for YT) for instant recognition during usage.
+- **UI/UX**: Uses a custom theme (`ReelRotTheme`) with high-contrast colors (Flame for accents, DeepCharcoal for background) for instant recognition during usage.

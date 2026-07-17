@@ -1,11 +1,14 @@
 package com.example.brainrot.service
 
+import android.annotation.SuppressLint
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.compose.foundation.BorderStroke
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -32,19 +36,20 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.brainrot.data.ReelDatabase
-import com.example.brainrot.ui.theme.BrainRotTheme
+import com.example.brainrot.ui.theme.ReelRotTheme
 import java.util.*
 
 class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
 
     private lateinit var windowManager: WindowManager
-    private var igView: ComposeView? = null
-    private var ytView: ComposeView? = null
+    private var platformView: ComposeView? = null
     private var totalView: ComposeView? = null
     
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private val store = ViewModelStore()
+
+    private var currentPlatform = mutableStateOf<String?>(null)
 
     override val lifecycle: Lifecycle get() = lifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
@@ -58,72 +63,160 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (igView == null) {
-            showTripleOverlays()
+        val platform = intent?.getStringExtra("PLATFORM")
+        currentPlatform.value = platform
+        
+        if (totalView == null) {
+            showBubbles()
         }
+        
+        platformView?.visibility = if (platform != null) View.VISIBLE else View.GONE
+        
         return START_STICKY
     }
 
-    private fun showTripleOverlays() {
-        val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        else
-            @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-
-        // Calculate dimensions for equal division
+    private fun showBubbles() {
         val density = resources.displayMetrics.density
         val screenWidth = resources.displayMetrics.widthPixels
-        val sideMarginPx = (12 * density).toInt()
-        val gapPx = (8 * density).toInt()
-        val islandWidthPx = (screenWidth - (2 * sideMarginPx) - (2 * gapPx)) / 3
+        val screenHeight = resources.displayMetrics.heightPixels
+        val pillWidthPx = (110 * density).toInt()
+        val pillHeightPx = (50 * density).toInt()
 
-        fun createParams(gravity: Int) = WindowManager.LayoutParams(
-            islandWidthPx,
-            (50 * density).toInt(), // Fixed height
-            layoutType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            this.gravity = gravity or Gravity.TOP
-            y = (35 * density).toInt() // Position below status bar
+        val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
+            .let { if (it > 0) resources.getDimensionPixelSize(it) else 0 }
+        val navBarHeight = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+            .let { if (it > 0) resources.getDimensionPixelSize(it) else 0 }
+
+        val topLimit = statusBarHeight + (72 * density).toInt()
+        val bottomLimit = screenHeight - navBarHeight - pillHeightPx - (72 * density).toInt()
+        val rightLimit = screenWidth - pillWidthPx - (16 * density).toInt()
+
+        val prefs = getSharedPreferences("bubble_prefs", Context.MODE_PRIVATE)
+
+        // 1. Platform Pill
+        val pX = prefs.getInt("platform_x", rightLimit)
+        val pY = prefs.getInt("platform_y", topLimit)
+        platformView = createDraggableOverlay(pX, pY, pillWidthPx, pillHeightPx, "platform") {
+            val platform = currentPlatform.value
+            if (platform != null) {
+                val icon = if (platform == "Instagram") Icons.Rounded.CameraAlt else Icons.Rounded.PlayArrow
+                val color = if (platform == "Instagram") Color(0xFFE1306C) else Color(0xFFFF0000)
+                IslandBox(platform = platform, icon = icon, color = color)
+            }
         }
 
-        // 1. Instagram Overlay (Left)
-        igView = createOverlay(createParams(Gravity.START).apply { x = sideMarginPx }) {
-            IslandBox(platform = "Instagram", icon = Icons.Rounded.CameraAlt, color = Color(0xFFE1306C))
-        }
-
-        // 2. Total Overlay (Center)
-        totalView = createOverlay(createParams(Gravity.CENTER_HORIZONTAL)) {
-            IslandBox(platform = "Total", iconText = "💀", color = Color.White)
-        }
-
-        // 3. YouTube Overlay (Right)
-        ytView = createOverlay(createParams(Gravity.END).apply { x = sideMarginPx }) {
-            IslandBox(platform = "YouTube", icon = Icons.Rounded.PlayArrow, color = Color(0xFFFF0000))
+        // 2. Total Pill
+        val tX = prefs.getInt("total_x", rightLimit)
+        val tY = prefs.getInt("total_y", bottomLimit)
+        totalView = createDraggableOverlay(tX, tY, pillWidthPx, pillHeightPx, "total") {
+            IslandBox(platform = "Total", icon = Icons.Rounded.LocalFireDepartment, color = Color(0xFFF0F0F0))
         }
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
-    private fun createOverlay(params: WindowManager.LayoutParams, content: @Composable () -> Unit): ComposeView {
+    @SuppressLint("ClickableViewAccessibility")
+    private fun createDraggableOverlay(
+        initialX: Int,
+        initialY: Int,
+        widthPx: Int,
+        heightPx: Int,
+        prefsKeyPrefix: String,
+        content: @Composable () -> Unit
+    ): ComposeView {
+        val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        else
+            @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+        val params = WindowManager.LayoutParams(
+            widthPx,
+            heightPx,
+            layoutType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = initialX
+            y = initialY
+        }
+
         val view = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@ReelOverlayService)
             setViewTreeSavedStateRegistryOwner(this@ReelOverlayService)
             setViewTreeViewModelStoreOwner(this, this@ReelOverlayService)
             setContent {
-                BrainRotTheme {
+                ReelRotTheme {
                     content()
                 }
             }
         }
+
+        view.setOnTouchListener(object : View.OnTouchListener {
+            private var initialTouchX = 0f
+            private var initialTouchY = 0f
+            private var startX = 0
+            private var startY = 0
+
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        startX = params.x
+                        startY = params.y
+                        initialTouchX = event.rawX
+                        initialTouchY = event.rawY
+                        return true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        params.x = startX + (event.rawX - initialTouchX).toInt()
+                        params.y = startY + (event.rawY - initialTouchY).toInt()
+                        windowManager.updateViewLayout(view, params)
+                        return true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        clampAndSave(view, params, prefsKeyPrefix)
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+
         windowManager.addView(view, params)
         return view
     }
 
+    private fun clampAndSave(view: View, params: WindowManager.LayoutParams, prefix: String) {
+        val density = resources.displayMetrics.density
+        val screenWidth = resources.displayMetrics.widthPixels
+        val screenHeight = resources.displayMetrics.heightPixels
+        val pillWidthPx = (110 * density).toInt()
+        val pillHeightPx = (50 * density).toInt()
+
+        val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
+            .let { if (it > 0) resources.getDimensionPixelSize(it) else 0 }
+        val navBarHeight = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+            .let { if (it > 0) resources.getDimensionPixelSize(it) else 0 }
+
+        val topLimit = statusBarHeight + (72 * density).toInt()
+        val bottomLimit = screenHeight - navBarHeight - pillHeightPx - (72 * density).toInt()
+        val leftLimit = (16 * density).toInt()
+        val rightLimit = screenWidth - pillWidthPx - (16 * density).toInt()
+
+        params.x = params.x.coerceIn(leftLimit, rightLimit)
+        params.y = params.y.coerceIn(topLimit, bottomLimit)
+        windowManager.updateViewLayout(view, params)
+
+        val prefs = getSharedPreferences("bubble_prefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putInt("${prefix}_x", params.x)
+            .putInt("${prefix}_y", params.y)
+            .apply()
+    }
+
     @Composable
-    fun IslandBox(platform: String, icon: ImageVector? = null, iconText: String? = null, color: Color) {
+    fun IslandBox(platform: String, icon: ImageVector? = null, color: Color) {
         val database = remember { ReelDatabase.getDatabase(this@ReelOverlayService) }
         val todayStart = remember {
             Calendar.getInstance().apply {
@@ -133,7 +226,6 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
 
         val sessionCounts by ReelSessionManager.sessionCounts.collectAsState()
         
-        // Accurate combined count for this specific island
         val count = if (platform == "Total") {
             val igDb by database.reelDao().getTodayCountByApp("Instagram", todayStart).collectAsState(initial = 0)
             val ytDb by database.reelDao().getTodayCountByApp("YouTube", todayStart).collectAsState(initial = 0)
@@ -145,20 +237,17 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
 
         Surface(
             modifier = Modifier.fillMaxSize().padding(2.dp),
-            // "Curved from two sides" aesthetic
             shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp, topEnd = 4.dp, bottomStart = 4.dp),
             color = Color.Black.copy(alpha = 0.85f),
             border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.15f))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertizontally,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 if (icon != null) {
                     Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
-                } else if (iconText != null) {
-                    Text(iconText, fontSize = 16.sp)
                 }
                 
                 Spacer(modifier = Modifier.width(6.dp))
@@ -176,8 +265,7 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
 
     override fun onDestroy() {
         super.onDestroy()
-        igView?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
-        ytView?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
+        platformView?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
         totalView?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         store.clear()

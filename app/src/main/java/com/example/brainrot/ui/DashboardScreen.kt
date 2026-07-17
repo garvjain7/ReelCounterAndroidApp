@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.brainrot.data.ReelDao
 import com.example.brainrot.service.ReelSessionManager
+import com.example.brainrot.ui.theme.Flame
+import com.example.brainrot.ui.theme.IGPink
+import com.example.brainrot.ui.theme.YTRed
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -33,17 +36,14 @@ fun DashboardScreen(reelDao: ReelDao) {
         }.timeInMillis
     }
 
-    // 1. Observe Database Counts (Saved data)
     val dbTodayCount by reelDao.getTodayCount(todayStart).collectAsState(initial = 0)
     val dbIgCount by reelDao.getCountByApp("Instagram").collectAsState(initial = 0)
     val dbYtCount by reelDao.getCountByApp("YouTube").collectAsState(initial = 0)
 
-    // 2. Observe Live Session Counts (Unsaved memory shards)
     val sessionCounts by ReelSessionManager.sessionCounts.collectAsState()
     val sessionIg = sessionCounts["Instagram"] ?: 0
     val sessionYt = sessionCounts["YouTube"] ?: 0
 
-    // 3. Combined "Live" Truth
     val liveTodayCount = dbTodayCount + sessionIg + sessionYt
     val liveIgCount = dbIgCount + sessionIg
     val liveYtCount = dbYtCount + sessionYt
@@ -80,10 +80,11 @@ fun DashboardScreen(reelDao: ReelDao) {
     ) {
         item {
             Text(
-                text = "Your Activity",
+                text = "Today's ReelRot",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth()
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -118,12 +119,12 @@ fun MainCounter(count: Int) {
         modifier = Modifier
             .size(220.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+            .background(Flame.copy(alpha = 0.1f))
     ) {
         CircularProgressIndicator(
             progress = { 1f },
             modifier = Modifier.size(200.dp),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.surfaceVariant,
             strokeWidth = 12.dp,
             strokeCap = StrokeCap.Round
         )
@@ -131,7 +132,7 @@ fun MainCounter(count: Int) {
         CircularProgressIndicator(
             progress = { progress },
             modifier = Modifier.size(200.dp),
-            color = MaterialTheme.colorScheme.primary,
+            color = Flame,
             strokeWidth = 12.dp,
             strokeCap = StrokeCap.Round
         )
@@ -141,7 +142,8 @@ fun MainCounter(count: Int) {
                 text = "$count",
                 style = MaterialTheme.typography.displayLarge,
                 fontWeight = FontWeight.Black,
-                fontSize = 56.sp
+                fontSize = 56.sp,
+                color = Flame
             )
             Text(
                 text = "Reels Today",
@@ -158,8 +160,8 @@ fun PlatformBreakdown(ig: Int, yt: Int) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        PlatformCard("Instagram", ig, Color(0xFFE1306C), Modifier.weight(1f))
-        PlatformCard("YouTube", yt, Color(0xFFFF0000), Modifier.weight(1f))
+        PlatformCard("Instagram", ig, IGPink, Modifier.weight(1f))
+        PlatformCard("YouTube", yt, YTRed, Modifier.weight(1f))
     }
 }
 
@@ -168,13 +170,22 @@ fun PlatformCard(name: String, count: Int, color: Color, modifier: Modifier = Mo
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "$count", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(text = name, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "$count", 
+                style = MaterialTheme.typography.headlineSmall, 
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = name, 
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -183,7 +194,12 @@ fun PlatformCard(name: String, count: Int, color: Color, modifier: Modifier = Mo
 fun WeeklyChart(counts: List<Int>) {
     if (counts.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Last 7 Days", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "Last 7 Days", 
+            style = MaterialTheme.typography.titleMedium, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
@@ -202,12 +218,16 @@ fun WeeklyChart(counts: List<Int>) {
                             .height(barHeight.dp.coerceAtLeast(4.dp))
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (index == counts.size - 1) MaterialTheme.colorScheme.primary 
-                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                if (index == counts.size - 1) Flame 
+                                else Flame.copy(alpha = 0.25f)
                             )
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(getDayLabel(6 - index), style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        getDayLabel(6 - index), 
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

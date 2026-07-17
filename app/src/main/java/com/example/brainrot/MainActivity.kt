@@ -24,7 +24,7 @@ import com.example.brainrot.service.ReelAccessibilityService
 import com.example.brainrot.ui.DashboardScreen
 import com.example.brainrot.ui.SettingsScreen
 import com.example.brainrot.ui.WelcomeScreen
-import com.example.brainrot.ui.theme.BrainRotTheme
+import com.example.brainrot.ui.theme.ReelRotTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            BrainRotTheme {
+            ReelRotTheme {
                 val context = LocalContext.current
                 var isServiceEnabled by remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
                 
