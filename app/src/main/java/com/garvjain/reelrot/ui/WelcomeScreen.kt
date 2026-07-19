@@ -2,6 +2,8 @@ package com.garvjain.reelrot.ui
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,15 +11,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayCircle
-import androidx.compose.material.icons.rounded.SdStorage
-import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -74,19 +73,7 @@ fun WelcomeScreen() {
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        PermissionInfoItem(
-            icon = Icons.Rounded.TouchApp,
-            title = "Swipe Detection",
-            description = "Counts every reel you scroll past. We never read your content or collect any data."
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        PermissionInfoItem(
-            icon = Icons.Rounded.SdStorage,
-            title = "100% On-Device",
-            description = "Everything stays on your phone. No accounts, no cloud, no tracking."
-        )
+        StepByStepInstructions()
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -100,51 +87,72 @@ fun WelcomeScreen() {
         ) {
             Text("Enable Tracking", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = "Settings → Accessibility → ReelRot",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
 @Composable
-fun PermissionInfoItem(icon: ImageVector, title: String, description: String) {
+fun StepByStepInstructions() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "How to enable",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        StepItem(step = "1", text = "Tap \"Enable Tracking\" below")
+        StepItem(step = "2", text = "Android opens Accessibility settings — scroll down to \"Downloaded apps\"")
+        StepItem(step = "3", text = "Tap \"ReelRot\"")
+        StepItem(step = "4", text = "Toggle it ON and confirm the system prompt")
+        StepItem(step = "5", text = "Come back here — the app starts automatically")
+    }
+}
+
+@Composable
+fun StepItem(step: String, text: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .padding(16.dp),
+            .padding(vertical = 6.dp),
         verticalAlignment = Alignment.Top
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Flame,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(Flame),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = step,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black
             )
         }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
 private fun openAccessibilitySettings(context: Context) {
-    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-    context.startActivity(intent)
+    // Android 13+ supports direct deep link to specific accessibility service
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        try {
+            val intent = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS").apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(intent)
+            return
+        } catch (e: Exception) {
+            // Fall through to generic page
+        }
+    }
+    // Fallback — generic accessibility settings page
+    context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 }

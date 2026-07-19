@@ -63,7 +63,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(context: Context): Boolean {
-        val service = "${context.packageName}/${ReelAccessibilityService::class.java.canonicalName}"
+        // Use .name instead of canonicalName for stable identification
+        val service = "${context.packageName}/${ReelAccessibilityService::class.java.name}"
         val enabledServices = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES

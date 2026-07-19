@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -77,7 +78,12 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)
             .build()
-        startForeground(1, notification)
+            
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(1, notification)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -257,11 +263,14 @@ class ReelOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, V
         val sessionCounts by ReelSessionManager.sessionCounts.collectAsState()
         
         val count = if (platform == "Total") {
-            val igDb by database.reelDao().getTodayCountByApp("Instagram", todayStart).collectAsState(initial = 0)
-            val ytDb by database.reelDao().getTodayCountByApp("YouTube", todayStart).collectAsState(initial = 0)
+            val igDbFlow = remember(todayStart) { database.reelDao().getTodayCountByApp("Instagram", todayStart) }
+            val ytDbFlow = remember(todayStart) { database.reelDao().getTodayCountByApp("YouTube", todayStart) }
+            val igDb by igDbFlow.collectAsState(initial = 0)
+            val ytDb by ytDbFlow.collectAsState(initial = 0)
             igDb + ytDb + (sessionCounts["Instagram"] ?: 0) + (sessionCounts["YouTube"] ?: 0)
         } else {
-            val dbCount by database.reelDao().getTodayCountByApp(platform, todayStart).collectAsState(initial = 0)
+            val dbCountFlow = remember(platform, todayStart) { database.reelDao().getTodayCountByApp(platform, todayStart) }
+            val dbCount by dbCountFlow.collectAsState(initial = 0)
             dbCount + (sessionCounts[platform] ?: 0)
         }
 
