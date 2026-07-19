@@ -1,4 +1,4 @@
-package com.example.brainrot.detector
+package com.garvjain.reelrot.detector
 
 import android.view.accessibility.AccessibilityEvent
 

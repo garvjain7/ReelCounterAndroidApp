@@ -1,4 +1,4 @@
-package com.example.brainrot
+package com.garvjain.reelrot
 
 import android.content.Context
 import android.os.Bundle
@@ -19,12 +19,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.brainrot.data.ReelDatabase
-import com.example.brainrot.service.ReelAccessibilityService
-import com.example.brainrot.ui.DashboardScreen
-import com.example.brainrot.ui.SettingsScreen
-import com.example.brainrot.ui.WelcomeScreen
-import com.example.brainrot.ui.theme.ReelRotTheme
+import com.garvjain.reelrot.data.ReelDatabase
+import com.garvjain.reelrot.service.ReelAccessibilityService
+import com.garvjain.reelrot.ui.DashboardScreen
+import com.garvjain.reelrot.ui.SettingsScreen
+import com.garvjain.reelrot.ui.WelcomeScreen
+import com.garvjain.reelrot.ui.theme.ReelRotTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainAppContent(reelDao: com.example.brainrot.data.ReelDao) {
+fun MainAppContent(reelDao: com.garvjain.reelrot.data.ReelDao) {
     var selectedTab by remember { mutableIntStateOf(0) }
     
     Scaffold(
